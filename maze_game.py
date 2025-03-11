@@ -10,8 +10,8 @@ pygame.init()
 # Constants
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 800
-BLOCK_SIZE = 40  # Block size for the maze
 FPS = 15
+BLOCK_SIZE = 40
 
 # Define Colors
 WHITE = (255, 255, 255)
@@ -22,10 +22,10 @@ END = (194, 3, 253)
 GRAY = (169, 169, 169)
 WALL = (34, 22, 44)
 
+
 # Load the maze data from a JSON file
 def load_maps():
-    if os.path.exists(''
-                      'maps.json'):
+    if os.path.exists('maps.json'):
         with open('maps.json', 'r') as f:
             data = json.load(f)
         return data['maps']
@@ -46,21 +46,35 @@ clock = pygame.time.Clock()
 # Define font for text input and display
 font = pygame.font.Font(None, 40)
 
+# Player starting position
+player_x = 1
+player_y = 1
+
 # Function to draw the maze and player
 def draw_maze(maze):
-    for y in range(len(maze)):
-        for x in range(len(maze[y])):
-            if maze[y][x] == 1:  # Wall
-                pygame.draw.rect(screen, WALL, pygame.Rect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE))
-            elif maze[y][x] == 3:  # Exit
-                pygame.draw.rect(screen, END, pygame.Rect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE))
+    global BLOCK_SIZE
+    maze_width = len(maze[0])  # Počet sloupců
+    maze_height = len(maze)  # Počet řádků
 
-    # Draw the player at its current position (after updating position)
+    # Dynamické nastavení velikosti bloku podle obrazovky
+    BLOCK_SIZE = min(SCREEN_WIDTH // maze_width, SCREEN_HEIGHT // maze_height)
+
+    for y in range(maze_height):
+        for x in range(maze_width):
+            rect = pygame.Rect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE)
+            if maze[y][x] == 1:
+                pygame.draw.rect(screen, WALL, rect)
+            elif maze[y][x] == 3:
+                pygame.draw.rect(screen, END, rect)
+
     pygame.draw.rect(screen, PLAYER, pygame.Rect(player_x * BLOCK_SIZE, player_y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE))
 
 # Function to handle movement
 def move_player(key, maze):
     global player_x, player_y
+    if player_y >= len(maze) or player_x >= len(maze[0]):
+        print(f"Error: Player position out of bounds! ({player_x}, {player_y})")
+        return
     if key == pygame.K_UP and player_y > 0 and maze[player_y - 1][player_x] != 1:
         player_y -= 1
     elif key == pygame.K_DOWN and player_y < len(maze) - 1 and maze[player_y + 1][player_x] != 1:
@@ -71,8 +85,16 @@ def move_player(key, maze):
         player_x += 1
 
 # Function to check if the player reached the exit
+#def check_exit(maze):
+    #return maze[player_y][player_x] == 3
 def check_exit(maze):
-    return maze[player_y][player_x] == 3
+    global player_x, player_y  # Zajištění přístupu ke globálním proměnným
+
+    # Ověření, že souřadnice hráče jsou v platném rozsahu bludiště
+    if 0 <= player_y < len(maze) and 0 <= player_x < len(maze[0]):
+        return maze[player_y][player_x] == 3  # Kontrola, zda je hráč na východu
+
+    return False  # Pokud jsou souřadnice mimo rozsah, vrátí False
 
 # Function to handle name input
 def get_player_name():
@@ -141,7 +163,14 @@ def run_game(maze):
                 move_player(event.key, maze)
 
         if check_exit(maze):
+
             return elapsed_time  # Return final time when the player reaches the exit
+            #return time.time() - start_time
+
+        #def check_exit(maze):
+            #global player_x, player_y
+            #return maze[player_y][player_x] == 3
+
 
         pygame.display.update()
         clock.tick(FPS)
@@ -190,9 +219,13 @@ if __name__ == '__main__':
     # Choose a random map to start
     current_map = get_random_map()
 
+
+
     while True:
         print("Solve the maze to record your time.")
         fastest_time = run_game(current_map)
+        if fastest_time is None:
+            break
 
         # Ask if the player wants to play again
         choice = play_again()
