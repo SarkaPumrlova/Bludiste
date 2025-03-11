@@ -108,7 +108,8 @@ def get_player_name():
 
     return name
 
-# Function to run the game
+
+# Function to run the game with a live timer floating on the right
 def run_game(maze):
     global player_x, player_y
     # Reset player position to start
@@ -121,6 +122,18 @@ def run_game(maze):
         screen.fill(SCREEN)
         draw_maze(maze)
 
+        # Calculate elapsed time
+        elapsed_time = time.time() - start_time
+        formatted_time = f"Time: {elapsed_time:.2f} sec"
+
+        # Render and display the timer in the top-right corner
+        font_timer = pygame.font.Font(None, 50)
+        timer_text = font_timer.render(formatted_time, True, BLACK)
+
+        # Get text width to position it dynamically at the right edge
+        text_width, text_height = timer_text.get_size()
+        screen.blit(timer_text, (SCREEN_WIDTH - text_width - 20, 20))  # Right-aligned with padding
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -128,10 +141,11 @@ def run_game(maze):
                 move_player(event.key, maze)
 
         if check_exit(maze):
-            return time.time() - start_time
+            return elapsed_time  # Return final time when the player reaches the exit
 
         pygame.display.update()
         clock.tick(FPS)
+
 
 # Function to display play again options
 def play_again():
