@@ -24,8 +24,9 @@ WALL = (34, 22, 44)
 
 # Load the maze data from a JSON file
 def load_maps():
-    if os.path.exists('mapy/maps.json'):
-        with open('mapy/maps.json', 'r') as f:
+    if os.path.exists(''
+                      'maps.json'):
+        with open('maps.json', 'r') as f:
             data = json.load(f)
         return data['maps']
     return []
