@@ -3,6 +3,7 @@ import time
 import json
 import os
 import random
+import concurrent.futures
 
 # Initialize pygame
 pygame.init()
@@ -21,7 +22,6 @@ PLAYER = (254, 123, 212)
 END = (194, 3, 253)
 GRAY = (169, 169, 169)
 WALL = (34, 22, 44)
-
 
 # Load the maze data from a JSON file
 def load_maps():
@@ -175,6 +175,14 @@ def run_game(maze):
         pygame.display.update()
         clock.tick(FPS)
 
+def run_game_with_timeout(func, timeout=10):
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future = executor.submit(func)
+        try:
+            return future.result(timeout = timeout)
+        except concurrent.futures.TimeoutError:
+            return None
+
 
 # Function to display play again options
 def play_again():
@@ -219,11 +227,9 @@ if __name__ == '__main__':
     # Choose a random map to start
     current_map = get_random_map()
 
-
-
     while True:
         print("Solve the maze to record your time.")
-        fastest_time = run_game(current_map)
+        fastest_time = run_game_with_timeout(run_game(current_map))
         if fastest_time is None:
             break
 
