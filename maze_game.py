@@ -134,9 +134,7 @@ def get_player_name():
 # Function to run the game with a live timer floating on the right
 def run_game(maze):
     global player_x, player_y
-    # Reset player position to start
-    player_x = 1
-    player_y = 1
+    player_x, player_y = 1, 1
     running = True
     start_time = time.time()
 
@@ -144,37 +142,26 @@ def run_game(maze):
         screen.fill(SCREEN)
         draw_maze(maze)
 
-        # Calculate elapsed time
         elapsed_time = time.time() - start_time
         formatted_time = f"Time: {elapsed_time:.2f} sec"
 
-        # Render and display the timer in the top-right corner
         font_timer = pygame.font.Font(None, 50)
         timer_text = font_timer.render(formatted_time, True, BLACK)
-
-        # Get text width to position it dynamically at the right edge
-        text_width, text_height = timer_text.get_size()
-        screen.blit(timer_text, (SCREEN_WIDTH - text_width - 20, 20))  # Right-aligned with padding
+        text_width, _ = timer_text.get_size()
+        screen.blit(timer_text, (SCREEN_WIDTH - text_width - 20, 20))
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
+                pygame.quit()
+                exit()
             if event.type == pygame.KEYDOWN:
                 move_player(event.key, maze)
 
         if check_exit(maze):
-
             return elapsed_time  # Return final time when the player reaches the exit
-            #return time.time() - start_time
-
-        #def check_exit(maze):
-            #global player_x, player_y
-            #return maze[player_y][player_x] == 3
-
 
         pygame.display.update()
         clock.tick(FPS)
-
 
 # Function to display play again options
 def play_again():
@@ -213,31 +200,41 @@ def play_again():
 
 # Main loop
 if __name__ == '__main__':
-    player_name = get_player_name()  # Get the name from the player
+    player_name = get_player_name()
     print(f"Welcome, {player_name}!")
 
-    # Choose a random map to start
     current_map = get_random_map()
-
-
 
     while True:
         print("Solve the maze to record your time.")
-        fastest_time = run_game(current_map)
-        if fastest_time is None:
+        final_time = run_game(current_map)
+
+        if final_time is None:
             break
 
-        # Ask if the player wants to play again
+
+        # Function to show final time before asking to play again
+        def show_final_time(final_time):
+            font_large = pygame.font.Font(None, 80)
+            while True:
+                screen.fill(WHITE)
+
+                # Display the final time
+                final_text = font_large.render(f"Finished in {final_time:.2f} sec!", True, BLACK)
+                screen.blit(final_text, (SCREEN_WIDTH // 2 - final_text.get_width() // 2, SCREEN_HEIGHT // 3))
+
+                pygame.display.update()
+                pygame.time.delay(2000)  # Show for 2 seconds
+                return  # Exit after delay
+
+
+        show_final_time(final_time)  # **NEW: Shows final time before Play Again screen**
         choice = play_again()
 
         if choice == 'same':
-            # Keep the same map
-            print("Playing again with the same map.")
-            continue  # This will loop back and keep the same map
+            continue
         elif choice == 'random':
-            # Get a new random map
-            print("Playing again with a new random map.")
             current_map = get_random_map()
-            continue  # This will loop back and get a new map
+            continue
 
 pygame.quit()
