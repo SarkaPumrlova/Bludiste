@@ -21,6 +21,9 @@ PLAYER = (254, 123, 212)
 END = (194, 3, 253)
 GRAY = (169, 169, 169)
 WALL = (34, 22, 44)
+STAR_COLOR = (255,255,0)
+
+stars_collected = 0
 
 
 # Load the maze data from a JSON file
@@ -37,6 +40,9 @@ def get_random_map():
     if maps:
         return random.choice(maps)
     return []
+
+def count_stars(maze): #spočítá hvězdičky v mapě
+    return sum(row.count(2) for row in maze)
 
 # Set up screen and clock
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -60,41 +66,58 @@ def draw_maze(maze):
     BLOCK_SIZE = min(SCREEN_WIDTH // maze_width, SCREEN_HEIGHT // maze_height)
 
     for y in range(maze_height):
+        global total_stars
         for x in range(maze_width):
             rect = pygame.Rect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE)
             if maze[y][x] == 1:
                 pygame.draw.rect(screen, WALL, rect)
             elif maze[y][x] == 3:
                 pygame.draw.rect(screen, END, rect)
+            elif maze[y][x] == 2:  # Hvězdička
+                pygame.draw.circle(screen, STAR_COLOR, rect.center, BLOCK_SIZE // 3)
 
     pygame.draw.rect(screen, PLAYER, pygame.Rect(player_x * BLOCK_SIZE, player_y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE))
 
 # Function to handle movement
 def move_player(key, maze):
-    global player_x, player_y
-    if player_y >= len(maze) or player_x >= len(maze[0]):
-        print(f"Error: Player position out of bounds! ({player_x}, {player_y})")
-        return
+    global player_x, player_y, stars_collected
+    new_x, new_y = player_x, player_y
+
     if key == pygame.K_UP and player_y > 0 and maze[player_y - 1][player_x] != 1:
-        player_y -= 1
+        new_y -= 1
     elif key == pygame.K_DOWN and player_y < len(maze) - 1 and maze[player_y + 1][player_x] != 1:
-        player_y += 1
+        new_y += 1
     elif key == pygame.K_LEFT and player_x > 0 and maze[player_y][player_x - 1] != 1:
-        player_x -= 1
+        new_x -= 1
     elif key == pygame.K_RIGHT and player_x < len(maze[0]) - 1 and maze[player_y][player_x + 1] != 1:
-        player_x += 1
+        new_x += 1
+
+    # Pokud hráč narazí na hvězdičku, sbírá ji
+    if maze[new_y][new_x] == 2:
+        stars_collected += 1
+        maze[new_y][new_x] = 0  # Odstraníme hvězdičku z mapy
+
+    player_x, player_y = new_x, new_y
 
 # Function to check if the player reached the exit
 #def check_exit(maze):
     #return maze[player_y][player_x] == 3
+
+
+
+
+
 def check_exit(maze):
-    global player_x, player_y  # Zajištění přístupu ke globálním proměnným
+    global player_x, player_y # Zajištění přístupu ke globálním proměnným
 
     # Ověření, že souřadnice hráče jsou v platném rozsahu bludiště
-    if 0 <= player_y < len(maze) and 0 <= player_x < len(maze[0]):
-        return maze[player_y][player_x] == 3  # Kontrola, zda je hráč na východu
+    #if 0 <= player_y < len(maze) and 0 <= player_x < len(maze[0]):
+        #return maze[player_y][player_x] == 3  # Kontrola, zda je hráč na východu
 
-    return False  # Pokud jsou souřadnice mimo rozsah, vrátí False
+    #return False  # Pokud jsou souřadnice mimo rozsah, vrátí False
+    if stars_collected < total_stars:
+        return False  # Hráč ještě nesebral všechny hvězdičky
+    return maze[player_y][player_x] == 3
 
 # Function to handle name input
 def get_player_name():
@@ -200,10 +223,12 @@ def play_again():
 
 # Main loop
 if __name__ == '__main__':
-    player_name = get_player_name()
+    global total_stars
+    player_name = get_player_name()  # Get the name from the player
     print(f"Welcome, {player_name}!")
 
     current_map = get_random_map()
+    total_stars = count_stars(current_map)
 
     while True:
         print("Solve the maze to record your time.")
@@ -236,5 +261,9 @@ if __name__ == '__main__':
         elif choice == 'random':
             current_map = get_random_map()
             continue
+
+
+
+
 
 pygame.quit()
