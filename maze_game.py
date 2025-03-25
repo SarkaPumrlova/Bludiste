@@ -50,6 +50,9 @@ font = pygame.font.Font(None, 40)
 player_x = 1
 player_y = 1
 
+def choose_game_mode():
+    pass
+
 # Function to draw the maze and player
 def draw_maze(maze):
     global BLOCK_SIZE
@@ -132,7 +135,7 @@ def get_player_name():
 
 
 # Function to run the game with a live timer floating on the right
-def run_game(maze):
+def run_game(maze, timeout=10):
     global player_x, player_y
     # Reset player position to start
     player_x = 1
@@ -171,18 +174,11 @@ def run_game(maze):
             #global player_x, player_y
             #return maze[player_y][player_x] == 3
 
+        if elapsed_time > timeout:
+            return None
 
         pygame.display.update()
         clock.tick(FPS)
-
-def run_game_with_timeout(func, timeout=10):
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        future = executor.submit(func)
-        try:
-            return future.result(timeout = timeout)
-        except concurrent.futures.TimeoutError:
-            return None
-
 
 # Function to display play again options
 def play_again():
@@ -229,9 +225,7 @@ if __name__ == '__main__':
 
     while True:
         print("Solve the maze to record your time.")
-        fastest_time = run_game_with_timeout(run_game(current_map))
-        if fastest_time is None:
-            break
+        run_game(current_map)
 
         # Ask if the player wants to play again
         choice = play_again()
