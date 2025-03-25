@@ -146,7 +146,7 @@ def run_game(maze):
         formatted_time = f"Time: {elapsed_time:.2f} sec"
 
         font_timer = pygame.font.Font(None, 50)
-        timer_text = font_timer.render(formatted_time, True, BLACK)
+        timer_text = font_timer.render(formatted_time, True, WHITE)
         text_width, _ = timer_text.get_size()
         screen.blit(timer_text, (SCREEN_WIDTH - text_width - 20, 20))
 
