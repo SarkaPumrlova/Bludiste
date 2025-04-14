@@ -22,6 +22,9 @@ PLAYER = (254, 123, 212)
 END = (194, 3, 253)
 GRAY = (169, 169, 169)
 WALL = (34, 22, 44)
+STAR_COLOR = (255,255,0)
+
+stars_collected = 0
 
 # Load the maze data from a JSON file
 def load_maps():
@@ -37,6 +40,9 @@ def get_random_map():
     if maps:
         return random.choice(maps)
     return []
+
+def count_stars(maze): #spočítá hvězdičky v mapě
+    return sum(row.count(2) for row in maze)
 
 # Set up screen and clock
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -63,41 +69,58 @@ def draw_maze(maze):
     BLOCK_SIZE = min(SCREEN_WIDTH // maze_width, SCREEN_HEIGHT // maze_height)
 
     for y in range(maze_height):
+        global total_stars
         for x in range(maze_width):
             rect = pygame.Rect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE)
             if maze[y][x] == 1:
                 pygame.draw.rect(screen, WALL, rect)
             elif maze[y][x] == 3:
                 pygame.draw.rect(screen, END, rect)
+            elif maze[y][x] == 2:  # Hvězdička
+                pygame.draw.circle(screen, STAR_COLOR, rect.center, BLOCK_SIZE // 3)
 
     pygame.draw.rect(screen, PLAYER, pygame.Rect(player_x * BLOCK_SIZE, player_y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE))
 
 # Function to handle movement
 def move_player(key, maze):
-    global player_x, player_y
-    if player_y >= len(maze) or player_x >= len(maze[0]):
-        print(f"Error: Player position out of bounds! ({player_x}, {player_y})")
-        return
+    global player_x, player_y, stars_collected
+    new_x, new_y = player_x, player_y
+
     if key == pygame.K_UP and player_y > 0 and maze[player_y - 1][player_x] != 1:
-        player_y -= 1
+        new_y -= 1
     elif key == pygame.K_DOWN and player_y < len(maze) - 1 and maze[player_y + 1][player_x] != 1:
-        player_y += 1
+        new_y += 1
     elif key == pygame.K_LEFT and player_x > 0 and maze[player_y][player_x - 1] != 1:
-        player_x -= 1
+        new_x -= 1
     elif key == pygame.K_RIGHT and player_x < len(maze[0]) - 1 and maze[player_y][player_x + 1] != 1:
-        player_x += 1
+        new_x += 1
+
+    # Pokud hráč narazí na hvězdičku, sbírá ji
+    if maze[new_y][new_x] == 2:
+        stars_collected += 1
+        maze[new_y][new_x] = 0  # Odstraníme hvězdičku z mapy
+
+    player_x, player_y = new_x, new_y
 
 # Function to check if the player reached the exit
 #def check_exit(maze):
     #return maze[player_y][player_x] == 3
+
+
+
+
+
 def check_exit(maze):
-    global player_x, player_y  # Zajištění přístupu ke globálním proměnným
+    global player_x, player_y # Zajištění přístupu ke globálním proměnným
 
     # Ověření, že souřadnice hráče jsou v platném rozsahu bludiště
-    if 0 <= player_y < len(maze) and 0 <= player_x < len(maze[0]):
-        return maze[player_y][player_x] == 3  # Kontrola, zda je hráč na východu
+    #if 0 <= player_y < len(maze) and 0 <= player_x < len(maze[0]):
+        #return maze[player_y][player_x] == 3  # Kontrola, zda je hráč na východu
 
-    return False  # Pokud jsou souřadnice mimo rozsah, vrátí False
+    #return False  # Pokud jsou souřadnice mimo rozsah, vrátí False
+    if stars_collected < total_stars:
+        return False  # Hráč ještě nesebral všechny hvězdičky
+    return maze[player_y][player_x] == 3
 
 # Function to handle name input
 def get_player_name():
@@ -137,9 +160,7 @@ def get_player_name():
 # Function to run the game with a live timer floating on the right
 def run_game(maze, timeout=10):
     global player_x, player_y
-    # Reset player position to start
-    player_x = 1
-    player_y = 1
+    player_x, player_y = 1, 1
     running = True
     start_time = time.time()
 
@@ -147,27 +168,24 @@ def run_game(maze, timeout=10):
         screen.fill(SCREEN)
         draw_maze(maze)
 
-        # Calculate elapsed time
         elapsed_time = time.time() - start_time
         formatted_time = f"Time: {elapsed_time:.2f} sec"
 
-        # Render and display the timer in the top-right corner
         font_timer = pygame.font.Font(None, 50)
-        timer_text = font_timer.render(formatted_time, True, BLACK)
-
-        # Get text width to position it dynamically at the right edge
-        text_width, text_height = timer_text.get_size()
-        screen.blit(timer_text, (SCREEN_WIDTH - text_width - 20, 20))  # Right-aligned with padding
+        timer_text = font_timer.render(formatted_time, True, WHITE)
+        text_width, _ = timer_text.get_size()
+        screen.blit(timer_text, (SCREEN_WIDTH - text_width - 20, 20))
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
+                pygame.quit()
+                exit()
             if event.type == pygame.KEYDOWN:
                 move_player(event.key, maze)
 
         if check_exit(maze):
-
             return elapsed_time  # Return final time when the player reaches the exit
+<<<<<<< HEAD
             #return time.time() - start_time
 
         #def check_exit(maze):
@@ -176,6 +194,8 @@ def run_game(maze, timeout=10):
 
         if elapsed_time > timeout:
             return None
+=======
+>>>>>>> main
 
         pygame.display.update()
         clock.tick(FPS)
@@ -217,27 +237,54 @@ def play_again():
 
 # Main loop
 if __name__ == '__main__':
+    global total_stars
     player_name = get_player_name()  # Get the name from the player
     print(f"Welcome, {player_name}!")
 
-    # Choose a random map to start
     current_map = get_random_map()
+<<<<<<< HEAD
 
     while True:
         print("Solve the maze to record your time.")
         run_game(current_map)
+=======
+    total_stars = count_stars(current_map)
 
-        # Ask if the player wants to play again
+    while True:
+        print("Solve the maze to record your time.")
+        final_time = run_game(current_map)
+
+        if final_time is None:
+            break
+>>>>>>> main
+
+
+        # Function to show final time before asking to play again
+        def show_final_time(final_time):
+            font_large = pygame.font.Font(None, 80)
+            while True:
+                screen.fill(WHITE)
+
+                # Display the final time
+                final_text = font_large.render(f"Finished in {final_time:.2f} sec!", True, BLACK)
+                screen.blit(final_text, (SCREEN_WIDTH // 2 - final_text.get_width() // 2, SCREEN_HEIGHT // 3))
+
+                pygame.display.update()
+                pygame.time.delay(2000)  # Show for 2 seconds
+                return  # Exit after delay
+
+
+        show_final_time(final_time)  # **NEW: Shows final time before Play Again screen**
         choice = play_again()
 
         if choice == 'same':
-            # Keep the same map
-            print("Playing again with the same map.")
-            continue  # This will loop back and keep the same map
+            continue
         elif choice == 'random':
-            # Get a new random map
-            print("Playing again with a new random map.")
             current_map = get_random_map()
-            continue  # This will loop back and get a new map
+            continue
+
+
+
+
 
 pygame.quit()
