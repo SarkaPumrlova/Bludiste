@@ -1,9 +1,9 @@
 import pygame
+import pygame.gfxdraw
 import time
 import json
 import os
 import random
-import concurrent.futures
 
 # Initialize pygame
 pygame.init()
@@ -17,12 +17,23 @@ BLOCK_SIZE = 40
 # Define Colors
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
+RED = (220,20,60)
 SCREEN = (236, 200, 252)
 PLAYER = (254, 123, 212)
 END = (194, 3, 253)
 GRAY = (169, 169, 169)
 WALL = (34, 22, 44)
 STAR_COLOR = (255,255,0)
+
+# Define Game Modes and Difficulty Levels
+#add map creator & random game events later
+MODES = ("normal", "countdown")
+DIFFICULTY = ("easy", "medium", "hard")
+COUNTDOWN_DIFF = {
+    "easy": 50,
+    "medium": 30,
+    "hard": 20
+}
 
 stars_collected = 0
 
@@ -156,9 +167,70 @@ def get_player_name():
 
     return name
 
+def choose_game_mode():
+    mode = 0
+    input_active = True
+
+    while input_active:
+        screen.fill(WHITE)
+        prompt_text1 = font.render("Normal", True, BLACK)
+        prompt_text2 = font.render("Countdown", True, BLACK)
+        screen.blit(prompt_text1, (120, 100))
+        screen.blit(prompt_text2, (120, 160))
+        pygame.gfxdraw.filled_polygon(screen, [(300, 115 + mode * 60), (330, 95 + mode * 60), (330, 135 + mode * 60)], RED)
+        pygame.gfxdraw.aapolygon(screen, [(300, 115 + mode * 60), (330, 95 + mode * 60), (330, 135 + mode * 60)], RED)
+        pygame.display.update()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_DOWN: 
+                    mode = mode + 1 if mode < len(MODES) - 1 else mode
+                elif event.key == pygame.K_UP:
+                    mode = mode - 1 if mode > 0 else mode
+                elif event.key == pygame.K_RETURN:
+                    input_active = False
+
+    return MODES[mode] 
+
+def choose_difficulty():
+    diff = 0
+    input_active = True
+
+    while input_active:
+        screen.fill(WHITE)
+        prompt_text1 = font.render("Easy", True, BLACK)
+        prompt_text2 = font.render("Medium", True, BLACK)
+        prompt_text3 = font.render("Hard", True, BLACK)
+        screen.blit(prompt_text1, (120, 100))
+        screen.blit(prompt_text2, (120, 160))
+        screen.blit(prompt_text3, (120, 220))
+        pygame.gfxdraw.filled_polygon(screen, [(250, 115 + diff * 60), (280, 95 + diff * 60), (280, 135 + diff * 60)], RED)
+        pygame.gfxdraw.aapolygon(screen, [(250, 115 + diff * 60), (280, 95 + diff * 60), (280, 135 + diff * 60)], RED)
+        pygame.display.update()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_DOWN: 
+                    diff = diff + 1 if diff < len(DIFFICULTY) - 1 else diff
+                elif event.key == pygame.K_UP:
+                    diff = diff - 1 if diff > 0 else diff
+                elif event.key == pygame.K_RETURN:
+                    input_active = False
+
+    print(f"Selected difficulty: {DIFFICULTY[diff]}")
+    print(diff)
+    return DIFFICULTY[diff]
 
 # Function to run the game with a live timer floating on the right
-def run_game(maze, timeout=10):
+def run_game(maze, timeout=float('inf')):
     global player_x, player_y
     player_x, player_y = 1, 1
     running = True
@@ -169,7 +241,7 @@ def run_game(maze, timeout=10):
         draw_maze(maze)
 
         elapsed_time = time.time() - start_time
-        formatted_time = f"Time: {elapsed_time:.2f} sec"
+        formatted_time = f"Time: {elapsed_time:.2f} sec" if mode != "countdown" else f"Time left: {timeout - elapsed_time:.2f} sec"
 
         font_timer = pygame.font.Font(None, 50)
         timer_text = font_timer.render(formatted_time, True, WHITE)
@@ -185,17 +257,9 @@ def run_game(maze, timeout=10):
 
         if check_exit(maze):
             return elapsed_time  # Return final time when the player reaches the exit
-<<<<<<< HEAD
-            #return time.time() - start_time
-
-        #def check_exit(maze):
-            #global player_x, player_y
-            #return maze[player_y][player_x] == 3
 
         if elapsed_time > timeout:
             return None
-=======
->>>>>>> main
 
         pygame.display.update()
         clock.tick(FPS)
@@ -242,22 +306,19 @@ if __name__ == '__main__':
     print(f"Welcome, {player_name}!")
 
     current_map = get_random_map()
-<<<<<<< HEAD
 
-    while True:
-        print("Solve the maze to record your time.")
-        run_game(current_map)
-=======
     total_stars = count_stars(current_map)
 
     while True:
         print("Solve the maze to record your time.")
-        final_time = run_game(current_map)
+        timeout = float('inf')  # Default to no timeout
+        mode = choose_game_mode()  # Choose game mode
 
-        if final_time is None:
-            break
->>>>>>> main
+        if mode == "countdown":
+            difficulty = choose_difficulty()
+            timeout = COUNTDOWN_DIFF[difficulty]  # Set timeout based on difficulty
 
+        final_time = run_game(current_map, timeout)
 
         # Function to show final time before asking to play again
         def show_final_time(final_time):
@@ -273,8 +334,9 @@ if __name__ == '__main__':
                 pygame.time.delay(2000)  # Show for 2 seconds
                 return  # Exit after delay
 
-
-        show_final_time(final_time)  # **NEW: Shows final time before Play Again screen**
+        if mode == "normal":
+            show_final_time(final_time)  # **NEW: Shows final time before Play Again screen**
+        
         choice = play_again()
 
         if choice == 'same':
@@ -282,9 +344,5 @@ if __name__ == '__main__':
         elif choice == 'random':
             current_map = get_random_map()
             continue
-
-
-
-
 
 pygame.quit()
