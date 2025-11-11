@@ -5,6 +5,21 @@ import json
 import os
 import random
 
+import sqlite3
+
+# save times and names
+def save_top_time(player_name, final_time):
+    conn = sqlite3.connect("game_data.db")
+    cursor = conn.cursor()
+
+    # Insert into the correct columns
+    cursor.execute("INSERT INTO top_times (player_name, time) VALUES (?, ?)", (player_name, final_time))
+
+    conn.commit()
+    conn.close()
+
+
+
 # Initialize pygame
 pygame.init()
 
@@ -24,6 +39,8 @@ END = (194, 3, 253)
 GRAY = (169, 169, 169)
 WALL = (34, 22, 44)
 STAR_COLOR = (255,255,0)
+
+stars_collected = 0
 
 # Define Game Modes and Difficulty Levels
 #add map creator & random game events later
@@ -306,6 +323,7 @@ if __name__ == '__main__':
     print(f"Welcome, {player_name}!")
 
     current_map = get_random_map()
+    total_stars = count_stars(current_map)
 
     total_stars = count_stars(current_map)
 
@@ -334,9 +352,12 @@ if __name__ == '__main__':
                 pygame.time.delay(2000)  # Show for 2 seconds
                 return  # Exit after delay
 
-        if mode == "normal":
-            show_final_time(final_time)  # **NEW: Shows final time before Play Again screen**
-        
+
+        # Save the player's result in the database
+        save_top_time(player_name, final_time)
+
+        # Show final time and ask to play again
+        show_final_time(final_time)
         choice = play_again()
 
         if choice == 'same':
@@ -344,5 +365,11 @@ if __name__ == '__main__':
         elif choice == 'random':
             current_map = get_random_map()
             continue
+
+
+
+
+
+
 
 pygame.quit()
