@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400..700&display=swap" rel="stylesheet">
+    <link href="static/css/styles.css" rel="stylesheet">
+    <title>Bludiště - tutorial</title>
+</head>
+<body>
+    <section class="layout">
+        <div class="header">
+            <h1 class="title">Bludiště - tutoriál</h1>
+        </div>
+        <div class="leftSide">
+            <div style="width:100%;"></div>
+        </div>
+        <div class="body">
+
+            <h2 class="section_title"> Záčátek hry </h2>
+            <p class="pixel_text">Při vstupu do hry, hra Vás požádá uvést svůj nickname.</p>
+            <img src="static/img/enter_name.jpg" class="picture" alt="Enter your name.">
+
+            <h2 class="section_title"> Zvolte si gamemode </h2>
+            <p class="pixel_text">Pak mátě si zvolit gamemode šípkami nahoru a dolu.</p>
+            <img src="static/img/mode1.jpg" class="picture" alt="Choose gamemode.">
+
+            <h2 class="section_title"> Normal </h2>
+            <p class="pixel_text">Normal je defaultní mode, ve kterém musíte najít správnou cestu a sbírat hvězdičky.</p>
+            <p class="pixel_text">Po ukončení můžete buď pokračovat ne stejné mapě nebo přeskočit na novou.</p>
+            <img src="static/img/gameplay.gif" class="picture" alt="Choose gamemode.">
+
+            <h2 class="section_title"> Countdown </h2>
+            <p class="pixel_text">V countdowmu musíte se urychlit, protože po spuštění stopek máte omezený čas na ukončení levelu.</p>
+            <p class="pixel_text">Mátě na výběr 3 složitosti:</p>
+            <ul>
+                <li class="pixel_item"> Hard - 30 sekund </li>
+                <li class="pixel_item"> Medium - 45 sekund </li>
+                <li class="pixel_item"> Easy - 60 sekund </li>
+            </ul>
+            <img src="static/img/gameplay_hard.gif" class="picture" alt="Choose gamemode.">
+
+        </div>
+        <div class="rightSide"></div>
+        <div class="footer"></div>
+    </section>
+
+    <!--
+    <script>
+        fetch('http://localhost:8080/fastest-times')
+            .then(response => response.json())
+            .then(times => {
+                const timesList = document.getElementById('times-list');
+                for (const [name, time] of Object.entries(times)) {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = `${name}: ${time.toFixed(2)} seconds`;
+                    timesList.appendChild(listItem);
+                }
+            });
+    </script>
+    -->
+</body>
+</html>
