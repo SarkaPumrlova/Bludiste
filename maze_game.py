@@ -4,18 +4,8 @@ import time
 import json
 import os
 import random
-
 import sqlite3
-
-# save time for database
-def save_top_time(player_name, final_time):
-    conn = sqlite3.connect("game_data.db")
-    cursor = conn.cursor()
-
-    cursor.execute("INSERT INTO top_times (player_name, time) VALUES (?, ?)", (player_name, final_time))
-
-    conn.commit()
-    conn.close()
+from database_setup import create_tables, get_or_create_player, get_level_id, save_attempt
 
 
 
@@ -39,6 +29,7 @@ WALL = (34, 22, 44)
 STAR_COLOR = (255,255,0)
 
 stars_collected = 0
+moves_count = 0
 
 # Define Game Modes and Difficulty Levels
 #add map creator & random game events later
@@ -232,8 +223,9 @@ def choose_difficulty():
 
 # Function to run the game with a live timer floating on the right
 def run_game(maze, timeout=float('inf')):
-    global player_x, player_y
+    global player_x, player_y, moves_count
     player_x, player_y = 1, 1
+    moves_count = 0
     running = True
     start_time = time.time()
 
@@ -255,6 +247,7 @@ def run_game(maze, timeout=float('inf')):
                 exit()
             if event.type == pygame.KEYDOWN:
                 move_player(event.key, maze)
+                moves_count += 1
 
         if check_exit(maze):
             return elapsed_time
@@ -303,7 +296,12 @@ def play_again():
 # Main loop
 if __name__ == '__main__':
     global total_stars
+    
+    # Initialize database
+    create_tables()
+    
     player_name = get_player_name()
+    player_id = get_or_create_player(player_name)
     print(f"Welcome, {player_name}!")
 
     current_map = get_random_map()
@@ -338,22 +336,27 @@ if __name__ == '__main__':
 
 
         # Save the player's result in the database
-        save_top_time(player_name, final_time)
+        if final_time is not None:
+            # Get level ID based on map dimensions
+            level_id = get_level_id(len(current_map[0]), len(current_map))
+            
+            if level_id:
+                # Record attempt
+                success = final_time <= timeout if timeout != float('inf') else True
+                save_attempt(player_id, level_id, int(final_time), moves_count, success)
 
         # Show final time and ask to play again
-        show_final_time(final_time)
+        if final_time is not None:
+            show_final_time(final_time)
         choice = play_again()
 
         if choice == 'same':
+            stars_collected = 0
             continue
         elif choice == 'random':
+            stars_collected = 0
             current_map = get_random_map()
+            total_stars = count_stars(current_map)
             continue
-
-
-
-
-
-
 
 pygame.quit()
