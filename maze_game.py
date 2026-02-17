@@ -5,10 +5,7 @@ import json
 import os
 import random
 import sqlite3
-from database_setup import create_tables, get_or_create_player, get_level_id, save_attempt
-
-
-
+from database_setup import create_tables, get_or_create_player, get_level_id, save_attempt, tables_are_created
 
 pygame.init()
 
@@ -298,7 +295,10 @@ if __name__ == '__main__':
     global total_stars
     
     # Initialize database
-    create_tables()
+    exist = tables_are_created(["players", "attempts", "levels"])
+
+    if not all(exist.values()):
+        create_tables()
     
     player_name = get_player_name()
     player_id = get_or_create_player(player_name)

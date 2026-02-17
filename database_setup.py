@@ -1,5 +1,4 @@
 # Create database
-
 import sqlite3
 import json
 import os
@@ -118,3 +117,14 @@ def save_top_time(player_name, final_time):
 
     conn.commit()
     conn.close()
+
+def tables_are_created(tables):
+    conn = sqlite3.connect("game_data.db")
+    cursor = conn.cursor()
+    result = {}
+
+    for table in tables:
+        cursor.execute(f"PRAGMA table_info({table});")
+        result[table] = cursor.fetchone() is not None
+
+    return result
