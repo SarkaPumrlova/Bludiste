@@ -5,7 +5,10 @@ import json
 import os
 import random
 import sqlite3
-from database_setup import create_tables, get_or_create_player, get_level_id, save_attempt, tables_are_created
+from database_setup import create_tables, get_or_create_player, get_level_id, save_attempt, get_level_leaderboard, get_overall_leaderboard
+
+
+
 
 pygame.init()
 
@@ -255,8 +258,68 @@ def run_game(maze, timeout=float('inf')):
         pygame.display.update()
         clock.tick(FPS)
 
+# Function to display the leaderboard
+def show_leaderboard(level_id):
+    font_large = pygame.font.Font(None, 60)
+    font_medium = pygame.font.Font(None, 40)
+    font_small = pygame.font.Font(None, 30)
+
+    back_key_pressed = False
+    
+    while not back_key_pressed:
+        screen.fill(WHITE)
+
+        # Title
+        title_text = font_large.render("Leaderboard", True, BLACK)
+        screen.blit(title_text, (SCREEN_WIDTH // 2 - title_text.get_width() // 2, 20))
+
+        # Get leaderboard data
+        try:
+            leaderboard = get_level_leaderboard(level_id, limit=10)
+        except:
+            leaderboard = []
+
+        # Display leaderboard
+        y_offset = 100
+        rank = 1
+        
+        if leaderboard:
+            # Header
+            header_text = font_small.render("Rank  Player              Time      Moves", True, GRAY)
+            screen.blit(header_text, (50, y_offset))
+            y_offset += 40
+            
+            for player_name, time_seconds, moves, played_at in leaderboard:
+                entry_text = font_small.render(
+                    f"{rank:<4}  {player_name:<15}  {time_seconds:>6.2f}s  {moves:>5}",
+                    True, BLACK
+                )
+                screen.blit(entry_text, (50, y_offset))
+                y_offset += 35
+                rank += 1
+        else:
+            no_data_text = font_medium.render("No scores yet", True, BLACK)
+            screen.blit(no_data_text, (SCREEN_WIDTH // 2 - no_data_text.get_width() // 2, SCREEN_HEIGHT // 2))
+
+        # Instructions
+        back_text = font_small.render("Press ESC to go back", True, GRAY)
+        screen.blit(back_text, (SCREEN_WIDTH // 2 - back_text.get_width() // 2, SCREEN_HEIGHT - 50))
+
+        pygame.display.update()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    back_key_pressed = True
+
+        clock.tick(30)
+
 # Function to display play again options
-def play_again():
+def play_again(level_id=None):
     font_large = pygame.font.Font(None, 60)
     font_small = pygame.font.Font(None, 40)
 
@@ -271,8 +334,10 @@ def play_again():
 
         same_map_text = font_small.render("Press 1 to play the same map", True, BLACK)
         random_map_text = font_small.render("Press 2 for a random map", True, BLACK)
+        leaderboard_text = font_small.render("Press 3 to view leaderboard", True, BLACK)
         screen.blit(same_map_text, (SCREEN_WIDTH // 2 - same_map_text.get_width() // 2, SCREEN_HEIGHT // 2))
         screen.blit(random_map_text, (SCREEN_WIDTH // 2 - random_map_text.get_width() // 2, SCREEN_HEIGHT // 2 + 40))
+        screen.blit(leaderboard_text, (SCREEN_WIDTH // 2 - leaderboard_text.get_width() // 2, SCREEN_HEIGHT // 2 + 80))
 
         pygame.display.update()
 
@@ -287,6 +352,9 @@ def play_again():
                     return 'same'
                 elif event.key == pygame.K_2:
                     return 'random'
+                elif event.key == pygame.K_3:
+                    if level_id:
+                        show_leaderboard(level_id)
 
         clock.tick(30)
 
@@ -295,18 +363,14 @@ if __name__ == '__main__':
     global total_stars
     
     # Initialize database
-    exist = tables_are_created(["players", "attempts", "levels"])
-
-    if not all(exist.values()):
-        create_tables()
+    create_tables()
     
     player_name = get_player_name()
     player_id = get_or_create_player(player_name)
     print(f"Welcome, {player_name}!")
 
     current_map = get_random_map()
-    total_stars = count_stars(current_map)
-
+    original_map = [row[:] for row in current_map]  # Store original map for level lookup
     total_stars = count_stars(current_map)
 
     while True:
@@ -319,6 +383,9 @@ if __name__ == '__main__':
             timeout = COUNTDOWN_DIFF[difficulty]  # Set timeout based on difficulty
 
         final_time = run_game(current_map, timeout)
+        
+        # Get level ID based on original map hash (before stars were collected)
+        level_id = get_level_id(original_map)
 
         # Display the final time
         def show_final_time(final_time):
@@ -337,9 +404,6 @@ if __name__ == '__main__':
 
         # Save the player's result in the database
         if final_time is not None:
-            # Get level ID based on map dimensions
-            level_id = get_level_id(len(current_map[0]), len(current_map))
-            
             if level_id:
                 # Record attempt
                 success = final_time <= timeout if timeout != float('inf') else True
@@ -348,14 +412,16 @@ if __name__ == '__main__':
         # Show final time and ask to play again
         if final_time is not None:
             show_final_time(final_time)
-        choice = play_again()
+        choice = play_again(level_id)
 
         if choice == 'same':
             stars_collected = 0
+            current_map = [row[:] for row in original_map]  # Reset map to original
             continue
         elif choice == 'random':
             stars_collected = 0
             current_map = get_random_map()
+            original_map = [row[:] for row in current_map]  # Store original of new map
             total_stars = count_stars(current_map)
             continue
 

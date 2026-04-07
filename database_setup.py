@@ -1,8 +1,10 @@
 # Create database
+
 import sqlite3
 import json
 import os
 import datetime
+import hashlib
 
 def create_tables():
     conn = sqlite3.connect("game_data.db")
@@ -24,7 +26,8 @@ def create_tables():
         name TEXT,
         difficulty TEXT,
         size_x INTEGER,
-        size_y INTEGER
+        size_y INTEGER,
+        map_hash TEXT UNIQUE
     )
     """)
 
@@ -57,15 +60,17 @@ def create_tables():
             # Determine difficulty: if bigger than 9x10, it's medium, otherwise easy
             difficulty = "medium" if (height > 9 or width > 10) else "easy"
             
+            # Compute map hash
+            map_hash = get_map_hash(map_data)
+            
             cursor.execute("""
-            INSERT OR IGNORE INTO levels (name, difficulty, size_x, size_y)
-            VALUES (?, ?, ?, ?)
-            """, (f"Level {index + 1}", difficulty, width, height))
+            INSERT OR IGNORE INTO levels (name, difficulty, size_x, size_y, map_hash)
+            VALUES (?, ?, ?, ?, ?)
+            """, (f"Level {index + 1}", difficulty, width, height, map_hash))
         
         conn.commit()
     
     conn.close()
-
 
 def get_or_create_player(username):
     """Get player ID or create new player"""
@@ -85,12 +90,18 @@ def get_or_create_player(username):
     conn.close()
     return player_id
 
-def get_level_id(width, height):
-    """Get level ID based on map dimensions"""
+def get_map_hash(maze):
+    """Generate a hash of the maze"""
+    maze_str = json.dumps(maze)
+    return hashlib.md5(maze_str.encode()).hexdigest()
+
+def get_level_id(maze):
+    """Get level ID based on map hash"""
     conn = sqlite3.connect("game_data.db")
     cursor = conn.cursor()
     
-    cursor.execute("SELECT id FROM levels WHERE size_x = ? AND size_y = ?", (width, height))
+    map_hash = get_map_hash(maze)
+    cursor.execute("SELECT id FROM levels WHERE map_hash = ?", (map_hash,))
     result = cursor.fetchone()
     
     conn.close()
@@ -118,13 +129,39 @@ def save_top_time(player_name, final_time):
     conn.commit()
     conn.close()
 
-def tables_are_created(tables):
+def get_level_leaderboard(level_id, limit=10):
+    """Get top scores for a specific level"""
     conn = sqlite3.connect("game_data.db")
     cursor = conn.cursor()
-    result = {}
+    
+    cursor.execute("""
+    SELECT p.username, a.time_seconds, a.moves, a.played_at
+    FROM attempts a
+    JOIN players p ON a.player_id = p.id
+    WHERE a.level_id = ? AND a.success = 1
+    ORDER BY a.time_seconds ASC
+    LIMIT ?
+    """, (level_id, limit))
+    
+    results = cursor.fetchall()
+    conn.close()
+    return results
 
-    for table in tables:
-        cursor.execute(f"PRAGMA table_info({table});")
-        result[table] = cursor.fetchone() is not None
-
-    return result
+def get_overall_leaderboard(limit=10):
+    """Get top scores across all levels"""
+    conn = sqlite3.connect("game_data.db")
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+    SELECT p.username, a.time_seconds, l.name, a.played_at
+    FROM attempts a
+    JOIN players p ON a.player_id = p.id
+    JOIN levels l ON a.level_id = l.id
+    WHERE a.success = 1
+    ORDER BY a.time_seconds ASC
+    LIMIT ?
+    """, (limit,))
+    
+    results = cursor.fetchall()
+    conn.close()
+    return results

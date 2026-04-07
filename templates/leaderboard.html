@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fastest Times</title>
+</head>
+<body>
+    <h1>Fastest Times Were:</h1>
+    <table>
+        <thead>
+            <tr>
+                <td>Username</td>
+                <td>Time in seconds</td>
+                <td>Level</td>
+                <td>Played at</td>
+                <td>Attempts</td>
+            </tr>
+        </thead>
+        <tbody>
+            {% for username, time_seconds, name, played_at in scores %}
+                <tr>
+                    <td>{{username}}</td>
+                    <td>{{time_seconds}}</td>
+                    <td>{{name}}</td>
+                    <td>{{played_at}}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
