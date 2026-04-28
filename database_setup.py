@@ -147,9 +147,9 @@ def get_level_leaderboard(level_id, limit=10):
     conn.close()
     return results
 
-def get_overall_leaderboard(limit=10):
+def get_overall_leaderboard(limit=10, path=""):
     """Get top scores across all levels"""
-    conn = sqlite3.connect("game_data.db")
+    conn = sqlite3.connect(path)
     cursor = conn.cursor()
     
     cursor.execute("""

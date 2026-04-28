@@ -5,16 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fastest Times</title>
 </head>
+
+<style>
+    .leaderboard, tr, td{
+        border: 1px solid black ;
+        border-collapse: collapse;
+    }
+</style>
+
 <body>
     <h1>Fastest Times Were:</h1>
-    <table>
+    <h2>Upload a File</h2>
+    <form action="/" method="POST" enctype="multipart/form-data">
+        <input type="file" name="userdb" accept=".db" required>
+        <br>
+        <button type="submit">Upload</button>
+    </form>
+    <table class="leaderboard">
         <thead>
             <tr>
                 <td>Username</td>
                 <td>Time in seconds</td>
                 <td>Level</td>
                 <td>Played at</td>
-                <td>Attempts</td>
             </tr>
         </thead>
         <tbody>
